@@ -109,21 +109,18 @@ def test(val_loader, swin_type, model, criterion, device):
             inputs, labels = data
             inputs, labels = inputs.to(device), labels.to(device)
 
-            # forward 
-            if swin_type.lower() == "swin_transformer_tiny" or swin_type.lower() == "swin_transformer_small" or swin_type.lower() == "swin_transformer_base":
-                outputs = model(inputs)
-            else:
-                outputs, attn_weights = model(inputs)
-                
+            # ✅ Safe forward pass for both Sparse and Plain Swin
+            out = model(inputs)
+            outputs = out[0] if isinstance(out, tuple) else out
+
             loss = criterion(outputs, labels)
 
             running_loss += loss.item()
-
             n_correct_per_batch = torch.sum(torch.argmax(outputs, dim=1) == labels)
             n_correct += n_correct_per_batch
             n_sample += labels.shape[0]
-            acc = n_correct / n_sample
 
     print(f'[Model : {swin_type}] Loss: {(running_loss / total_batch):.4f} Acc : {(n_correct / n_sample):.4f}')
     print()
     return (running_loss / total_batch), (n_correct / n_sample)
+
