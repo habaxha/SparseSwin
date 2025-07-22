@@ -28,37 +28,32 @@ def train(train_loader, swin_type, dataset, epochs, model, lf, token_num,
         for i, data in enumerate(train_loader, 0):
             inputs, labels = data
             inputs, labels = inputs.to(device), labels.to(device)
-
-            # zero the parameter gradients
+        
             optimizer.zero_grad()
-
-            # forward + backward + optimize
-            if swin_type.lower() == "swin_transformer_tiny" or swin_type.lower() == "swin_transformer_small" or swin_type.lower() == "swin_transformer_base":
-                outputs = model(inputs)
-            else:
-              out = model(inputs)
-              if isinstance(out, tuple):
+        
+            # ✅ Safe forward pass
+            out = model(inputs)
+            if isinstance(out, tuple):
                 outputs = out[0]
                 attn_weights = out[1] if len(out) > 1 else []
-              else:
+            else:
                 outputs = out
                 attn_weights = []
-
-            
+        
+            # Regularization
             reg = 0
-            if reg_type == 'l1':                
-                for attn_w in attn_weights: 
+            if reg_type == 'l1' and attn_weights:
+                for attn_w in attn_weights:
                     reg += torch.sum(torch.abs(attn_w))
-                    
-            elif reg_type == 'l2':
-                for attn_w in attn_weights: 
-                    reg += torch.sum(attn_w**2)
-                        
+            elif reg_type == 'l2' and attn_weights:
+                for attn_w in attn_weights:
+                    reg += torch.sum(attn_w ** 2)
             reg = reg_lambda * reg
-            
+        
             loss = criterion(outputs, labels) + reg
             loss.backward()
             optimizer.step()
+
 
             running_loss += loss.item()
 
