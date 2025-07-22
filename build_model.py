@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 from Models.SparseSwin import SparseSwin
 from torchvision.models import swin_t, swin_s, swin_b
 from torchvision.models import Swin_T_Weights, Swin_S_Weights, Swin_B_Weights
