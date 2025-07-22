@@ -31,12 +31,12 @@ train_dataset = datasets.CIFAR10(
                 root='./datasets/torch_cifar10/', 
                 train=True, 
                 transform=data_transform['train'], 
-                download=status)
+                download=True)
 val_dataset = datasets.CIFAR10(
                 root='./datasets/torch_cifar10/', 
                 train=False, 
                 transform=data_transform['val'], 
-                download=status)
+                download=True)
 
 # Todo: Train on CIFAR100
 # train_dataset = datasets.CIFAR100(
@@ -76,19 +76,30 @@ if __name__ == '__main__':
     ltoken_num, ltoken_dims = 49, 256
     lf = 2
     
-    model = build.buildSparseSwin(
-        image_resolution=224,
-        swin_type=swin_type, 
-        num_classes=10, 
-        ltoken_num=ltoken_num, 
-        ltoken_dims=ltoken_dims, 
-        num_heads=16, 
-        qkv_bias=True,
-        lf=lf, 
-        attn_drop_prob=.0, 
-        lin_drop_prob=.0, 
-        freeze_12=False,
-        device=device)
+    USE_SPARSE = False  # 🔥 change this to False to train plain Swin
+
+    if USE_SPARSE:
+            model = build.buildSparseSwin(
+                    image_resolution=224,
+                    swin_type='tiny',
+                    num_classes=num_classes,
+                    ltoken_num=49,
+                    ltoken_dims=256,
+                    num_heads=16,
+                    qkv_bias=True,
+                    lf=2,
+                    attn_drop_prob=.0,
+                    lin_drop_prob=.0,
+                    freeze_12=False,
+                    device=device)
+    else:
+            model = build.buildPlainSwin(
+                    image_resolution=224,
+                    swin_type='tiny',
+                    num_classes=num_classes,
+                    freeze_12=False,
+                    device=device)
+
     
     optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5, weight_decay=0.01)
     criterion = torch.nn.CrossEntropyLoss()
