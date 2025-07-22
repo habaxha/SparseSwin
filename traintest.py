@@ -36,7 +36,14 @@ def train(train_loader, swin_type, dataset, epochs, model, lf, token_num,
             if swin_type.lower() == "swin_transformer_tiny" or swin_type.lower() == "swin_transformer_small" or swin_type.lower() == "swin_transformer_base":
                 outputs = model(inputs)
             else:
-                outputs, attn_weights = model(inputs)
+              out = model(inputs)
+              if isinstance(out, tuple):
+                outputs = out[0]
+                attn_weights = out[1] if len(out) > 1 else []
+              else:
+                outputs = out
+                attn_weights = []
+
             
             reg = 0
             if reg_type == 'l1':                
