@@ -68,11 +68,13 @@ val_loader = torch.utils.data.DataLoader(
 
 if __name__ == '__main__':
     dataset = 'cifar10'
+    num_classes = 10
     swin_type = 'tiny'
     reg_type, reg_lambda = 'l1', 1e-5
     device = torch.device('cuda')
     epochs = 1
     show_per = 200
+    freeze_12 = False
     ltoken_num, ltoken_dims = 49, 256
     lf = 2
     
