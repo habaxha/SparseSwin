@@ -12,8 +12,13 @@ def train(train_loader, swin_type, dataset, epochs, model, lf, token_num,
     best_test_acc = -99
     
     specific_dir = f'./SavedModel/{dataset}/SparseSwin_reg_{reg_type}_lbd_{reg_lambda}_lf_{lf}_{token_num}'
-    if f'SparseSwin_reg_{reg_type}_lbd_{reg_lambda}_lf_{lf}_{token_num}' not in os.listdir(f'./SavedModel/{dataset}/'): 
-        os.mkdir(specific_dir)
+
+    # ✅ ensure base directory exists
+    os.makedirs(f'./SavedModel/{dataset}/', exist_ok=True)
+
+    if not os.path.exists(specific_dir):
+        os.makedirs(specific_dir, exist_ok=True)
+
     
     print(f"[TRAIN] Total : {total_batch} | type : {swin_type} | Regularization : {reg_type} with lamda : {reg_lambda}")
     for epoch in range(epochs):
