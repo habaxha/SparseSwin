@@ -137,29 +137,39 @@ class SparseSwin(nn.Module):
             print('Swin type is not available ...')
             return None
         
-        self.step4 = SparseTransformerBlock(
-                        c_dim=c_dim_3rd, 
-                        hw_size=hw_size_3rd,
-                        ltoken_num=ltoken_num, 
-                        ltoken_dim=ltoken_dims, 
-                        num_heads=num_heads, 
-                        qkv_bias=qkv_bias,
-                        hidden_features=hidden_features, 
-                        lf=lf, 
-                        attn_drop_prob=attn_drop_prob, 
-                        lin_drop_prob=lin_drop_prob,
-                        device=device)
+        # self.step4 = SparseTransformerBlock(
+        #                 c_dim=c_dim_3rd, 
+        #                 hw_size=hw_size_3rd,
+        #                 ltoken_num=ltoken_num, 
+        #                 ltoken_dim=ltoken_dims, 
+        #                 num_heads=num_heads, 
+        #                 qkv_bias=qkv_bias,
+        #                 hidden_features=hidden_features, 
+        #                 lf=lf, 
+        #                 attn_drop_prob=attn_drop_prob, 
+        #                 lin_drop_prob=lin_drop_prob,
+        #                 device=device)
         
-        self.norm = nn.LayerNorm(ltoken_dims)
-        self.fc_out = nn.Linear(in_features=ltoken_dims, out_features=num_classes)
+        # self.norm = nn.LayerNorm(ltoken_dims)
+        self.pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc_out = nn.Linear(in_features=c_dim_3rd, out_features=num_classes)
+
+        # self.fc_out = nn.Linear(in_features=ltoken_dims, out_features=num_classes)
         
     def forward(self, x):
         swin_out = self.swin_model(x)
-        step4, attn_weights, sparse_token_dim_converter = self.step4(swin_out)            # B, ltoken_num, ltoken_dim[0]
-        out = self.norm(step4)
-        out = out.transpose(1, 2)                             # B, ltoken_dim[1], ltoken_num
-        out = out.mean(dim=-1)                                # B, ltoken_dim[1]
+        pooled = self.pool(swin_out)      # B, C, 1, 1
+        pooled = torch.flatten(pooled, 1) # B, C
+        out = self.fc_out(pooled)         # B, num_classes
+        return out
+
+
         
-        out = self.fc_out(out)
+        # step4, attn_weights, sparse_token_dim_converter = self.step4(swin_out)            # B, ltoken_num, ltoken_dim[0]
+        # out = self.norm(step4)
+        # out = out.transpose(1, 2)                             # B, ltoken_dim[1], ltoken_num
+        # out = out.mean(dim=-1)                                # B, ltoken_dim[1]
         
-        return out, attn_weights, sparse_token_dim_converter
+        # out = self.fc_out(out)
+        
+        # return out, attn_weights, sparse_token_dim_converter
