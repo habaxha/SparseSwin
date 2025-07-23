@@ -158,6 +158,7 @@ class SparseSwin(nn.Module):
         
     def forward(self, x):
         swin_out = self.swin_model(x)
+        print("DEBUG swin_out:", swin_out.shape)
         pooled = self.pool(swin_out)      # B, C, 1, 1
         pooled = torch.flatten(pooled, 1) # B, C
         out = self.fc_out(pooled)         # B, num_classes
