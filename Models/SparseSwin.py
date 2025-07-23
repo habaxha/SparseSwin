@@ -162,7 +162,7 @@ class SparseSwin(nn.Module):
         pooled = self.pool(swin_out)               # [B, 384, 1, 1]
         pooled = torch.flatten(pooled, 1)          # [B, 384]
         out = self.fc_out(pooled)                  # [B, num_classes]
-        return out, [], None
+        return out, []
 
 
         
