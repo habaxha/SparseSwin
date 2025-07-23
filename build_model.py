@@ -1,9 +1,5 @@
 import torch
-import torch.nn as nn
 from Models.SparseSwin import SparseSwin
-from torchvision.models import swin_t, swin_s, swin_b
-from torchvision.models import Swin_T_Weights, Swin_S_Weights, Swin_B_Weights
-
 
 def buildSparseSwin(image_resolution, swin_type, num_classes, 
                     ltoken_num, ltoken_dims, num_heads, 
@@ -43,34 +39,6 @@ def buildSparseSwin(image_resolution, swin_type, num_classes,
     ).to(device)
     
     return model 
-
-
-# Now add this plain Swin builder:
-
-def buildPlainSwin(image_resolution=224, swin_type='tiny', num_classes=10, freeze_12=False, device='cuda'):
-    swin_type = swin_type.lower()
-    if swin_type == 'tiny':
-        model = swin_t(weights=Swin_T_Weights.IMAGENET1K_V1)
-    elif swin_type == 'small':
-        model = swin_s(weights=Swin_S_Weights.IMAGENET1K_V1)
-    elif swin_type == 'base':
-        model = swin_b(weights=Swin_B_Weights.IMAGENET1K_V1)
-    else:
-        raise ValueError("Invalid swin_type")
-
-    # freeze first 2 stages if required
-    if freeze_12:
-        for param in model.features[:4].parameters():
-            param.requires_grad = False
-
-    # replace the head for CIFAR classes
-    in_features = model.head.in_features
-    model.head = nn.Linear(in_features, num_classes)
-
-    return model.to(device)
-
-
-
 
 if __name__ == '__main__': 
     swin_type = 'tiny'
