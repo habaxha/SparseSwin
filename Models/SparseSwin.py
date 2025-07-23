@@ -157,11 +157,11 @@ class SparseSwin(nn.Module):
         # self.fc_out = nn.Linear(in_features=ltoken_dims, out_features=num_classes)
         
     def forward(self, x):
-        swin_out = self.swin_model(x)
-        print("DEBUG swin_out:", swin_out.shape)
-        pooled = self.pool(swin_out)      # B, C, 1, 1
-        pooled = torch.flatten(pooled, 1) # B, C
-        out = self.fc_out(pooled)         # B, num_classes
+        swin_out = self.swin_model(x)              # [B, 14, 14, 384]
+        swin_out = swin_out.permute(0, 3, 1, 2)    # [B, 384, 14, 14]
+        pooled = self.pool(swin_out)               # [B, 384, 1, 1]
+        pooled = torch.flatten(pooled, 1)          # [B, 384]
+        out = self.fc_out(pooled)                  # [B, num_classes]
         return out, [], None
 
 
