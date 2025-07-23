@@ -12,13 +12,8 @@ def train(train_loader, swin_type, dataset, epochs, model, lf, token_num,
     best_test_acc = -99
     
     specific_dir = f'./SavedModel/{dataset}/SparseSwin_reg_{reg_type}_lbd_{reg_lambda}_lf_{lf}_{token_num}'
-
-    # ✅ ensure base directory exists
-    os.makedirs(f'./SavedModel/{dataset}/', exist_ok=True)
-
-    if not os.path.exists(specific_dir):
-        os.makedirs(specific_dir, exist_ok=True)
-
+    if f'SparseSwin_reg_{reg_type}_lbd_{reg_lambda}_lf_{lf}_{token_num}' not in os.listdir(f'./SavedModel/{dataset}/'): 
+        os.mkdir(specific_dir)
     
     print(f"[TRAIN] Total : {total_batch} | type : {swin_type} | Regularization : {reg_type} with lamda : {reg_lambda}")
     for epoch in range(epochs):
@@ -28,32 +23,30 @@ def train(train_loader, swin_type, dataset, epochs, model, lf, token_num,
         for i, data in enumerate(train_loader, 0):
             inputs, labels = data
             inputs, labels = inputs.to(device), labels.to(device)
-        
+
+            # zero the parameter gradients
             optimizer.zero_grad()
-        
-            # ✅ Safe forward pass
-            out = model(inputs)
-            if isinstance(out, tuple):
-                outputs = out[0]
-                attn_weights = out[1] if len(out) > 1 else []
+
+            # forward + backward + optimize
+            if swin_type.lower() == "swin_transformer_tiny" or swin_type.lower() == "swin_transformer_small" or swin_type.lower() == "swin_transformer_base":
+                outputs = model(inputs)
             else:
-                outputs = out
-                attn_weights = []
-        
-            # Regularization
+                outputs, attn_weights = model(inputs)
+            
             reg = 0
-            if reg_type == 'l1' and attn_weights:
-                for attn_w in attn_weights:
+            if reg_type == 'l1':                
+                for attn_w in attn_weights: 
                     reg += torch.sum(torch.abs(attn_w))
-            elif reg_type == 'l2' and attn_weights:
-                for attn_w in attn_weights:
-                    reg += torch.sum(attn_w ** 2)
+                    
+            elif reg_type == 'l2':
+                for attn_w in attn_weights: 
+                    reg += torch.sum(attn_w**2)
+                        
             reg = reg_lambda * reg
-        
+            
             loss = criterion(outputs, labels) + reg
             loss.backward()
             optimizer.step()
-
 
             running_loss += loss.item()
 
@@ -109,18 +102,21 @@ def test(val_loader, swin_type, model, criterion, device):
             inputs, labels = data
             inputs, labels = inputs.to(device), labels.to(device)
 
-            # ✅ Safe forward pass for both Sparse and Plain Swin
-            out = model(inputs)
-            outputs = out[0] if isinstance(out, tuple) else out
-
+            # forward 
+            if swin_type.lower() == "swin_transformer_tiny" or swin_type.lower() == "swin_transformer_small" or swin_type.lower() == "swin_transformer_base":
+                outputs = model(inputs)
+            else:
+                outputs, attn_weights = model(inputs)
+                
             loss = criterion(outputs, labels)
 
             running_loss += loss.item()
+
             n_correct_per_batch = torch.sum(torch.argmax(outputs, dim=1) == labels)
             n_correct += n_correct_per_batch
             n_sample += labels.shape[0]
+            acc = n_correct / n_sample
 
     print(f'[Model : {swin_type}] Loss: {(running_loss / total_batch):.4f} Acc : {(n_correct / n_sample):.4f}')
     print()
     return (running_loss / total_batch), (n_correct / n_sample)
-
